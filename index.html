@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Steam Revenue Calculator</title>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-<script type="text/javascript" src="https://gc.kis.v2.scr.kaspersky-labs.com/FD126C42-EBFA-4E12-B309-BB3FDD723AC1/main.js?attr=Q-BULipX8YgOGIK8CQ4zFMH3c3aU9_8HpuIMYBQTU2jrr5Pc9RunAnOoN9y5iQDf3EEqSqdHBfYYN2Z6fQyiokq8TvjHJY-dgEdnZjv-Er5aXws9WvRU3Ph3H0HsungeGPsmZ4TNzyjrMHJZsuGHuGcJhg2uKbob7-VFEExp6QdSMz79dVd-TZQgjkMMZnw6FIedI9gpMxc87fhKckMsadi5LNoUfg_KZ96tx7n_OK7YqbcpT_U8whhDLt81uCnRfzp9RjoCNgkl18z4WNmdo7NPhjSKvW_9NuQSWNc0vVI4ZfTatCMveNH8KHuyJXUmj2i9Wl0Bu5_yusuJj5O1Hg" charset="UTF-8"></script><style>
+<style>
   *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
   :root {
     --bg:#0d0d14; --panel:#13131f; --panel2:#1a1a2e; --border:#2a2a40;
@@ -125,7 +125,7 @@
   .wf-amount { font-family:'JetBrains Mono',monospace; font-size:11px; min-width:105px; text-align:right; flex-shrink:0; }
 
   /* big stats */
-  .big-result { background:var(--panel); border:1px solid var(--border); border-radius:8px; padding:20px; display:grid; grid-template-columns:repeat(3,1fr); gap:16px; text-align:center; }
+  .big-result { background:var(--panel); border:1px solid var(--border); border-radius:8px; padding:20px; display:grid; grid-template-columns:repeat(4,1fr); gap:16px; text-align:center; }
   .big-stat .blabel { font-size:10px; color:var(--muted); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:6px; }
   .big-stat .bvalue { font-family:'JetBrains Mono',monospace; font-size:18px; font-weight:700; line-height:1; }
   .big-stat .bsub { font-size:10px; color:var(--muted); margin-top:4px; }
@@ -306,6 +306,11 @@
       <div class="bvalue green" id="big-profit">—</div>
       <div class="bsub" id="big-profit-sub">total</div>
     </div>
+    <div class="big-stat" id="big-m1-stat" style="display:none">
+      <div class="blabel">Net Profit (Member 1)</div>
+      <div class="bvalue green" id="big-profit-m1">—</div>
+      <div class="bsub" id="big-profit-m1-sub">steam share</div>
+    </div>
     <div class="big-stat">
       <div class="blabel">Monthly / Person</div>
       <div class="bvalue yellow" id="big-monthly">—</div>
@@ -474,13 +479,13 @@ function updateTeamSplit() {
   list.querySelectorAll('input[type="range"]').forEach(i=>existing.push(parseFloat(i.value)||0));
 
   list.innerHTML='';
-  const eq = Math.floor(100/n);
+  const eq = Math.round(Math.round(100/n)/5)*5;
   for(let i=0;i<n;i++){
-    const val = existing[i]!==undefined ? existing[i] : (i<n-1?eq:100-eq*(n-1));
+    const val = existing[i]!==undefined ? Math.round(existing[i]/5)*5 : (i<n-1?eq:100-eq*(n-1));
     list.innerHTML+=`
       <div class="member-row">
         <label>Member ${i+1}</label>
-        <input type="range" id="member-${i}" min="0" max="100" step="1" value="${val}"
+        <input type="range" id="member-${i}" min="0" max="100" step="5" value="${val}"
           oninput="document.getElementById('mval-${i}').textContent=this.value+'%';updateSplitTotal();calc()">
         <span class="range-val" id="mval-${i}">${val}%</span>
       </div>`;
@@ -721,6 +726,18 @@ function calc() {
   set('big-profit', brl(consoleOn?totalNetProfit:netProfit), 'bvalue green');
   document.getElementById('big-profit-sub').textContent =
     consoleOn?'steam + console':(team>1?team+' members':'solo');
+
+  // Member 1 net profit card — only when team > 1
+  const m1StatEl = document.getElementById('big-m1-stat');
+  if(team>1){
+    m1StatEl.style.display='';
+    set('big-profit-m1', brl(memberProfits[0]), 'bvalue green');
+    document.getElementById('big-profit-m1-sub').textContent =
+      (shares[0]*100).toFixed(0)+'% of steam'+(consoleOn?'+console':'');
+  } else {
+    m1StatEl.style.display='none';
+  }
+
   set('big-monthly', brl(memberMonthly[0]), 'bvalue yellow');
   document.getElementById('big-monthly-sub').textContent =
     team>1?'member 1 · '+months+' mo':'over '+months+' months';
